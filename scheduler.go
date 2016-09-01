@@ -49,6 +49,8 @@ func (s *scheduler) runPending() {
 	}
 }
 
+// Start must be called as it starts the polling process for task execution
+// returns a channel which you can push a message onto to stop the scheduler
 func (s *scheduler) Start() chan bool {
 	stopped := make(chan bool, 1)
 	ticker := time.NewTicker(500 * time.Millisecond)
