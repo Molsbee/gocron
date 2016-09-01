@@ -6,38 +6,45 @@ import "time"
 // execution
 type Scheduler interface {
 	Schedule() *Task
-	RunPending()
 	Start() chan bool
 }
 
-// MaxTasks is the current max size of a task list that an array can administer
-const MaxTasks = 100
-
 type scheduler struct {
-	tasks [MaxTasks]*Task
-	size  int
+	tasks       []*Task
+	workChannel chan *Task
 }
 
-// NewScheduler -
-func NewScheduler() Scheduler {
-	return &scheduler{
-		tasks: [MaxTasks]*Task{},
-		size:  0,
+// NewScheduler creates a new instance of a Scheduler which consists of multiple
+// task for execution.  Along with a pool of workers defined for processing those
+// tasks.  The pool is defined through this constractor and it's recomended to
+// minimize the amount of time intensive tasks as they will cause the workers
+// to delay execution.  Size tasks and worker pool appropriately
+func NewScheduler(poolSize int) Scheduler {
+	scheduler := &scheduler{
+		tasks:       []*Task{},
+		workChannel: make(chan *Task, 10),
 	}
+
+	for i := 0; i <= poolSize; i++ {
+		go scheduler.processTask()
+	}
+
+	return scheduler
 }
 
+// Schedule is used as a builder pattern to return a task that can then be
+// added to the Scheduler through a fluent style api
 func (s *scheduler) Schedule() *Task {
 	task := NewTask()
-	s.tasks[s.size] = task
-	s.size++
+	s.tasks = append(s.tasks, task)
 	return task
 }
 
-func (s *scheduler) RunPending() {
+func (s *scheduler) runPending() {
 	// TODO: Should delegate work to multiple works
-	for i := 0; i < s.size; i++ {
+	for i := 0; i < len(s.tasks); i++ {
 		if s.tasks[i].shouldRun() {
-			s.tasks[i].run()
+			s.workChannel <- s.tasks[i]
 		}
 	}
 }
@@ -50,7 +57,7 @@ func (s *scheduler) Start() chan bool {
 		for {
 			select {
 			case <-ticker.C:
-				s.RunPending()
+				s.runPending()
 			case <-stopped:
 				return
 			}
@@ -58,4 +65,10 @@ func (s *scheduler) Start() chan bool {
 	}()
 
 	return stopped
+}
+
+func (s *scheduler) processTask() {
+	for task := range s.workChannel {
+		task.run()
+	}
 }

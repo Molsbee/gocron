@@ -1,7 +1,6 @@
 package gocron
 
 import (
-	"log"
 	"testing"
 	"time"
 
@@ -13,7 +12,7 @@ func TestScheduleTask_OneSecond(t *testing.T) {
 	executionTime := make(chan time.Time, 2)
 
 	// act
-	scheduler := NewScheduler()
+	scheduler := NewScheduler(1)
 	scheduler.Schedule().Second(1).Run(func() {
 		t.Logf("Task is being executed %s", time.Now())
 		executionTime <- time.Now()
@@ -43,7 +42,7 @@ func TestScheduleTask_OneMinute(t *testing.T) {
 	executionTime := make(chan time.Time, 2)
 
 	// act
-	scheduler := NewScheduler()
+	scheduler := NewScheduler(1)
 	scheduler.Schedule().Minute(1).Run(func() {
 		t.Logf("Task is being executed %s", time.Now())
 		executionTime <- time.Now()
@@ -68,12 +67,12 @@ func TestScheduleTask_OneMinute(t *testing.T) {
 	assert.True(t, diff.Minutes() < 2)
 }
 
-func TestScheduleTask_OneMinuteTenSeconds(t *testing.T) {
+func TestScheduleTask_OneMinuteThirtySeconds(t *testing.T) {
 	// arrange
 	executionTime := make(chan time.Time, 2)
 
 	// act
-	scheduler := NewScheduler()
+	scheduler := NewScheduler(1)
 	scheduler.Schedule().Minute(1).Second(30).Run(func() {
 		t.Logf("Task is being executed %s", time.Now())
 		executionTime <- time.Now()
@@ -93,7 +92,7 @@ func TestScheduleTask_OneMinuteTenSeconds(t *testing.T) {
 	assert.NotNil(t, secondTime)
 
 	diff := secondTime.Sub(firstTime)
-	log.Println(diff)
+	t.Logf("Time difference %s", diff)
 	assert.True(t, diff.Minutes() > 1.3)
 	assert.True(t, diff.Minutes() < 2)
 }
