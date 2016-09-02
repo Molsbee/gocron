@@ -1,93 +1,137 @@
 package parser
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParse_EachMinute(t *testing.T) {
-	// arrange
-	now := time.Now()
-
-	schedule := Parse("* * * * * *")
-	start := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local)
-	startOne := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 1, 0, 0, time.Local)
-	startTwo := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 2, 0, 0, time.Local)
-	startThree := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 3, 0, 0, time.Local)
-
-	// act
-	next := schedule.Next(start)
-	nextOne := schedule.Next(startOne)
-	nextTwo := schedule.Next(startTwo)
-	nextThree := schedule.Next(startThree)
-
-	// assert
-	assert.True(t, next.Minute() == 0)
-	assert.True(t, nextOne.Minute() == 1)
-	assert.True(t, nextTwo.Minute() == 2)
-	assert.True(t, nextThree.Minute() == 3)
+type TimeData struct {
+	cronSchedule string
+	validation   func(t *testing.T, current, next time.Time)
+	startTime    []time.Time
 }
 
-func TestParse_MultipleMinutesProvided(t *testing.T) {
-	// arrange
-	now := time.Now()
-
-	schedule := Parse("10,15 * * * * *")
-	startTen := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 6, 0, 0, time.Local)
-	startFifteen := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 13, 0, 0, time.Local)
-
-	// act
-	ten := schedule.Next(startTen)
-	fifteen := schedule.Next(startFifteen)
-
-	// assert
-	assert.True(t, ten.Minute() == 10, fmt.Sprintf("Time: %s - minutes expected %d actual %d", ten, 10, ten.Minute()))
-	assert.True(t, fifteen.Minute() == 15, fmt.Sprintf("Time: %s - minutes expected %d actual %d", fifteen, 15, fifteen.Minute()))
+func executeTimeData(t *testing.T, timeData TimeData) {
+	schedule := Parse(timeData.cronSchedule)
+	for _, time := range timeData.startTime {
+		next := schedule.Next(time)
+		t.Logf("current (%s) next (%s)", time, next)
+		timeData.validation(t, time, next)
+	}
 }
 
-func TestParse_EveryMinuteOfFourthHour(t *testing.T) {
-	// arrange
-	now := time.Now()
+var now = time.Now()
 
-	schedule := Parse("* 4 * * * *")
-	start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
+func TestParse_EveryMinute(t *testing.T) {
+	everyMinute := TimeData{
+		cronSchedule: "* * * * * *",
+		validation: func(t *testing.T, current, next time.Time) {
+			assert.Equal(t, current.Year(), next.Year())
+			assert.Equal(t, current.Hour(), next.Hour())
+			assert.Equal(t, current.Minute(), next.Minute())
+		},
+		startTime: []time.Time{
+			time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local),
+			time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 5, 0, 0, time.Local),
+			time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 12, 0, 0, time.Local),
+			time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 25, 0, 0, time.Local),
+			time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 45, 0, 0, time.Local),
+			time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 59, 0, 0, time.Local),
+		},
+	}
 
-	// act
-	next := schedule.Next(start)
-
-	// assert
-	assert.Equal(t, 4, next.Hour()) // Executed on the 4th hour
+	executeTimeData(t, everyMinute)
 }
 
-func TestParse_EveryFifteenMinutesStartingAtZero(t *testing.T) {
+func TestParse_MultipleMinuteList(t *testing.T) {
+	minuteList := TimeData{
+		cronSchedule: "25,45 * * * * *",
+		validation: func(t *testing.T, current, next time.Time) {
+			assert.Equal(t, current.Year(), next.Year())
+			assert.Equal(t, current.Month(), next.Month())
+			assert.Equal(t, current.Day(), next.Day())
+
+			if current.Minute() < 25 || current.Minute() > 45 {
+				assert.True(t, next.Minute() == 25)
+			} else {
+				assert.True(t, next.Minute() == 45)
+			}
+		},
+		startTime: []time.Time{
+			time.Date(now.Year(), now.Month(), now.Day(), 0, 10, 0, 0, time.Local),
+			time.Date(now.Year(), now.Month(), now.Day(), 0, 30, 0, 0, time.Local),
+			time.Date(now.Year(), now.Month(), now.Day(), 0, 50, 0, 0, time.Local),
+		},
+	}
+
+	executeTimeData(t, minuteList)
+}
+
+func TestParse_MinuteStepValue(t *testing.T) {
+	minuteStep := TimeData{
+		cronSchedule: "*/15 * * * * *",
+		validation: func(t *testing.T, current, next time.Time) {
+			assert.Equal(t, current.Year(), next.Year())
+			assert.Equal(t, current.Month(), next.Month())
+			assert.Equal(t, current.Day(), next.Day())
+			assert.True(t, next.Minute()%15 == 0)
+		},
+		startTime: []time.Time{
+			time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local),
+			time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 5, 0, 0, time.Local),
+			time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 20, 0, 0, time.Local),
+			time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 35, 0, 0, time.Local),
+		},
+	}
+
+	executeTimeData(t, minuteStep)
+}
+
+func TestParse_HourList(t *testing.T) {
+	var hourList = TimeData{
+		cronSchedule: "* 4,8 * * * *",
+		validation: func(t *testing.T, current, next time.Time) {
+			assert.Equal(t, current.Year(), next.Year())
+			assert.Equal(t, current.Month(), next.Month())
+			if current.Hour() < 4 || current.Hour() > 8 {
+				day := current.Day()
+				if current.Hour() > 8 {
+					day++
+				}
+				assert.Equal(t, day, next.Day())
+				assert.Equal(t, 4, next.Hour())
+			} else {
+				assert.Equal(t, current.Day(), next.Day())
+				assert.Equal(t, 8, next.Hour())
+			}
+		},
+		startTime: []time.Time{
+			time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local),
+			time.Date(now.Year(), now.Month(), now.Day(), 5, 0, 0, 0, time.Local),
+			time.Date(now.Year(), now.Month(), now.Day(), 8, 0, 0, 0, time.Local),
+			time.Date(now.Year(), now.Month(), now.Day(), 9, 0, 0, 0, time.Local),
+		},
+	}
+
+	executeTimeData(t, hourList)
+}
+
+func TestParse_MonthFieldFebruary(t *testing.T) {
 	// arrange
 	now := time.Now()
 
-	schedule := Parse("*/15 * * * * *")
-	startZero := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local)
-	startFifteen := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 15, 0, 0, time.Local)
-	startThirty := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 30, 0, 0, time.Local)
-	startFourtyFive := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 45, 0, 0, time.Local)
+	schedule := Parse("* * * 2 * *")
+	january := time.Date(now.Year(), 1, now.Day(), 0, 0, 0, 0, time.Local)
+	august := time.Date(now.Year(), 8, now.Day(), 0, 0, 0, 0, time.Local)
 
 	// act
-	nextZero := schedule.Next(startZero)
-	nextFifteen := schedule.Next(startFifteen)
-	nextThirty := schedule.Next(startThirty)
-	nextFourty := schedule.Next(startFourtyFive)
+	nextJanuary := schedule.Next(january)
+	nextAugust := schedule.Next(august)
 
 	// assert
-	assert.True(t, nextZero.Before(startZero.Add(1*time.Minute)))
-	assert.True(t, nextZero.Minute()%15 == 0)
-
-	assert.True(t, nextFifteen.Before(startFifteen.Add(1*time.Minute)))
-	assert.True(t, nextFifteen.Minute()%15 == 0)
-
-	assert.True(t, nextThirty.Before(startThirty.Add(1*time.Minute)))
-	assert.True(t, nextThirty.Minute()%15 == 0)
-
-	assert.True(t, nextFourty.Before(startFourtyFive.Add(1*time.Minute)))
-	assert.True(t, nextFourty.Minute()%15 == 0)
+	assert.True(t, nextJanuary.Month() == 2)
+	assert.True(t, nextAugust.Year() == now.Year()+1)
+	assert.True(t, nextAugust.Month() == 2)
 }
