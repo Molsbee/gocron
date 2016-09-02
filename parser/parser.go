@@ -57,35 +57,46 @@ func getField(v string, min, max uint, names map[string]uint) uint64 {
 	}
 
 	stepValues := strings.Split(v, "/")
-	step := calculateStep(stepValues)
+	step := calculateStep(stepValues) // Validate & Calculate number of slashes
+
 	rangeValues := strings.Split(stepValues[0], "-")
+	if len(rangeValues) < 0 || len(rangeValues) > 2 {
+		log.Panicf("Too many hyphens provided: %s", v)
+	}
 
 	if rangeValues[0] == "*" || rangeValues[0] == "?" {
 		return getBits(min, max, step)
 	}
 
-	var end uint
 	start := parseField(rangeValues[0], names)
-	switch len(rangeValues) {
-	case 1:
-		end = start
-	case 2:
-		end = parseField(rangeValues[1], names)
-	default:
-		log.Panicf("Too many hyphens provided: %s", v)
-	}
-
+	end := start
 	if start < min {
 		log.Panicf("Value (%d) provided is below the minimum allowed value (%d) for field", start, min)
 	}
-	if end > max {
-		log.Panicf("Value (%d) provided is above the maximum allowed value (%d) for field", end, max)
-	}
-	if start > end {
-		log.Panicf("Beginning of range (%d) is beyond the end range (%d)", start, end)
+
+	if len(rangeValues) == 2 {
+		end = parseField(rangeValues[1], names)
+		if end > max {
+			log.Panicf("Value (%d) provided is above the maximum allowed value (%d) for field", end, max)
+		}
+		if start > end {
+			log.Panicf("Beginning of range (%d) is beyond the end range (%d)", start, end)
+		}
 	}
 
 	return getBits(start, end, step)
+}
+
+func calculateStep(stepValues []string) (step uint) {
+	switch len(stepValues) {
+	case 1:
+		step = 1
+	case 2:
+		step = parseField(stepValues[1], nil)
+	default:
+		log.Panicf("To many (/) provided - %s", stepValues)
+	}
+	return
 }
 
 func parseField(field string, names map[string]uint) uint {
@@ -102,27 +113,12 @@ func parseField(field string, names map[string]uint) uint {
 	return uint(value)
 }
 
-func calculateStep(stepValues []string) (step uint) {
-	switch len(stepValues) {
-	case 1:
-		step = 1
-	case 2:
-		step = parseField(stepValues[1], nil)
-	default:
-		log.Panicf("To many slashes provided")
-	}
-	return
-}
-
 func getBits(min, max, step uint) uint64 {
-	var bits uint64
-
-	// If step is 1, use shifts.
 	if step == 1 {
 		return ^(math.MaxUint64 << (max + 1)) & (math.MaxUint64 << min)
 	}
 
-	// Else, use a simple loop.
+	var bits uint64
 	for i := min; i <= max; i += step {
 		bits |= 1 << i
 	}
