@@ -18,9 +18,9 @@ type Schedule struct {
 func (s *Schedule) Next(t time.Time) time.Time {
 	t = t.Add(1 * time.Second)
 	added := false
-
 	yearLimit := t.Year() + 5
 WRAP:
+	// If the iterated time is past the year limit returns zero valued time
 	if t.Year() > yearLimit {
 		return time.Time{}
 	}
