@@ -8,8 +8,13 @@ import (
 )
 
 var (
-	monthString = map[string]uint{"jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6, "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12}
-	dayString   = map[string]uint{"sun": 1, "mon": 2, "tue": 3, "wed": 4, "thu": 5, "fri": 6, "sat": 7}
+	monthNames = map[string]uint{
+		"jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6, "jul": 7,
+		"aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
+	}
+	dayNames = map[string]uint{
+		"sun": 1, "mon": 2, "tue": 3, "wed": 4, "thu": 5, "fri": 6, "sat": 7,
+	}
 )
 
 // Parse converts a classic cron formatted string into a schedule which
@@ -32,8 +37,8 @@ func Parse(cron string) *Schedule {
 		Minute:     getField(fields[0], 0, 59, nil),
 		Hour:       getField(fields[1], 0, 23, nil),
 		DayOfMonth: getField(fields[2], 1, 31, nil),
-		Month:      getField(fields[3], 1, 12, monthString),
-		DayOfWeek:  getField(fields[4], 1, 7, dayString),
+		Month:      getField(fields[3], 1, 12, monthNames),
+		DayOfWeek:  getField(fields[4], 1, 7, dayNames),
 		Year:       getField(fields[5], 2016, 3000, nil),
 	}
 }
@@ -51,24 +56,23 @@ func getField(v string, min, max uint, names map[string]uint) uint64 {
 		return bits
 	}
 
-	var start, end, step uint
 	stepValues := strings.Split(v, "/")
+	step := calculateStep(stepValues)
 	rangeValues := strings.Split(stepValues[0], "-")
 
 	if rangeValues[0] == "*" || rangeValues[0] == "?" {
-		start = min
-		end = max
-	} else {
-		start = parseField(rangeValues[0], names)
-		switch len(rangeValues) {
-		case 1:
-			end = start
-		case 2:
-			end = parseField(rangeValues[1], names)
-		default:
-			log.Panicf("Too many hyphens provided: %s", v)
-		}
+		return getBits(min, max, step)
+	}
 
+	var end uint
+	start := parseField(rangeValues[0], names)
+	switch len(rangeValues) {
+	case 1:
+		end = start
+	case 2:
+		end = parseField(rangeValues[1], names)
+	default:
+		log.Panicf("Too many hyphens provided: %s", v)
 	}
 
 	if start < min {
@@ -79,15 +83,6 @@ func getField(v string, min, max uint, names map[string]uint) uint64 {
 	}
 	if start > end {
 		log.Panicf("Beginning of range (%d) is beyond the end range (%d)", start, end)
-	}
-
-	switch len(stepValues) {
-	case 1:
-		step = 1
-	case 2:
-		step = parseField(stepValues[1], nil)
-	default:
-		log.Panicf("To many slashes provided: %s", v)
 	}
 
 	return getBits(start, end, step)
@@ -105,6 +100,18 @@ func parseField(field string, names map[string]uint) uint {
 	}
 
 	return uint(value)
+}
+
+func calculateStep(stepValues []string) (step uint) {
+	switch len(stepValues) {
+	case 1:
+		step = 1
+	case 2:
+		step = parseField(stepValues[1], nil)
+	default:
+		log.Panicf("To many slashes provided")
+	}
+	return
 }
 
 func getBits(min, max, step uint) uint64 {
