@@ -126,11 +126,20 @@ func TestParse_MonthFieldFebruary(t *testing.T) {
 		validation: func(t *testing.T, current, next time.Time) {
 			assert.True(t, next.Month() == 2)
 
-			assert.Equal(t, current.Minute(), next.Minute())
-			if current.Month() > 2 {
-				assert.Equal(t, current.Year()+1, next.Year())
+			if current.Month() != 2 {
+				if current.Month() > 2 {
+					assert.Equal(t, current.Year()+1, next.Year())
+				} else {
+					assert.Equal(t, current.Year(), next.Year())
+				}
+
+				assert.Equal(t, 1, next.Day())
+				assert.Equal(t, 0, next.Hour())
+				assert.Equal(t, 0, next.Minute())
 			} else {
 				assert.Equal(t, current.Year(), next.Year())
+				assert.Equal(t, current.Hour(), next.Hour())
+				assert.Equal(t, current.Minute(), next.Minute())
 			}
 		},
 		startTime: []time.Time{
