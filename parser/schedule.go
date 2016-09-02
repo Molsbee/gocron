@@ -2,7 +2,8 @@ package parser
 
 import "time"
 
-// Schedule -
+// Schedule is a struct representation of the cron schedule
+// Example: */15 * * * * *
 type Schedule struct {
 	Minute     uint64
 	Hour       uint64
@@ -12,6 +13,8 @@ type Schedule struct {
 	Year       uint64
 }
 
+// Next determines the next time the schedule should execute based on the time
+// provided to the function
 func (s *Schedule) Next(t time.Time) time.Time {
 	t = t.Add(1 * time.Second)
 	added := false
