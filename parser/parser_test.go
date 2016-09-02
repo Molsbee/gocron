@@ -118,8 +118,6 @@ func TestParse_HourList(t *testing.T) {
 	executeTimeData(t, hourList)
 }
 
-// TODO: Doesn't seem to calculate properly as it provides the first occurrence
-// given the same day as provided
 func TestParse_MonthFieldFebruary(t *testing.T) {
 	var month = TimeData{
 		cronSchedule: "* * * 2 * *",
@@ -152,20 +150,4 @@ func TestParse_MonthFieldFebruary(t *testing.T) {
 	}
 
 	executeTimeData(t, month)
-
-	// arrange
-	now := time.Now()
-
-	schedule := Parse("* * * 2 * *")
-	january := time.Date(now.Year(), 1, now.Day(), 0, 0, 0, 0, time.Local)
-	august := time.Date(now.Year(), 8, now.Day(), 0, 0, 0, 0, time.Local)
-
-	// act
-	nextJanuary := schedule.Next(january)
-	nextAugust := schedule.Next(august)
-
-	// assert
-	assert.True(t, nextJanuary.Month() == 2)
-	assert.True(t, nextAugust.Year() == now.Year()+1)
-	assert.True(t, nextAugust.Month() == 2)
 }
