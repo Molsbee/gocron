@@ -118,7 +118,32 @@ func TestParse_HourList(t *testing.T) {
 	executeTimeData(t, hourList)
 }
 
+// TODO: Doesn't seem to calculate properly as it provides the first occurrence
+// given the same day as provided
 func TestParse_MonthFieldFebruary(t *testing.T) {
+	var month = TimeData{
+		cronSchedule: "* * * 2 * *",
+		validation: func(t *testing.T, current, next time.Time) {
+			assert.True(t, next.Month() == 2)
+
+			assert.Equal(t, current.Minute(), next.Minute())
+			if current.Month() > 2 {
+				assert.Equal(t, current.Year()+1, next.Year())
+			} else {
+				assert.Equal(t, current.Year(), next.Year())
+			}
+		},
+		startTime: []time.Time{
+			time.Date(now.Year(), 2, 1, 0, 0, 0, 0, time.Local),
+			time.Date(now.Year(), 2, 1, 0, 1, 0, 0, time.Local),
+			time.Date(now.Year(), 2, 1, 0, 2, 0, 0, time.Local),
+			time.Date(now.Year(), 1, 2, 0, 0, 0, 0, time.Local), // This should be Feb | day 1 | hour 0 | minute 0
+			time.Date(now.Year(), 8, now.Day(), 0, 0, 0, 0, time.Local),
+		},
+	}
+
+	executeTimeData(t, month)
+
 	// arrange
 	now := time.Now()
 
