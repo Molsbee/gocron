@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// SimpleTask struct defining a operation that needs to be execute by gocron
+// SimpleTask struct defining an operation that needs to be execute by gocron
 type SimpleTask struct {
 	task   Runnable
 	hour   int
@@ -17,7 +17,7 @@ type SimpleTask struct {
 	period  time.Duration
 }
 
-// NewSimpleTask construct for creating a unpopulated SimpleTask struct
+// NewSimpleTask constructor for creating a unpopulated SimpleTask struct
 func NewSimpleTask() *SimpleTask {
 	return &SimpleTask{}
 }
