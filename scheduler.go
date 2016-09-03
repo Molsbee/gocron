@@ -5,13 +5,13 @@ import "time"
 // Scheduler contains multiple tasks for execution and manages those tasks
 // execution
 type Scheduler interface {
-	Schedule() *Task
+	ScheduleSimpleTask() *SimpleTask
 	Start() chan bool
 }
 
 type scheduler struct {
-	tasks       []*Task
-	workChannel chan *Task
+	tasks       []Task
+	workChannel chan Task
 }
 
 // NewScheduler creates a new instance of a Scheduler which consists of multiple
@@ -21,8 +21,8 @@ type scheduler struct {
 // to delay execution.  Size tasks and worker pool appropriately
 func NewScheduler(poolSize int) Scheduler {
 	scheduler := &scheduler{
-		tasks:       []*Task{},
-		workChannel: make(chan *Task, 10),
+		tasks:       []Task{},
+		workChannel: make(chan Task, 10),
 	}
 
 	for i := 0; i <= poolSize; i++ {
@@ -32,21 +32,17 @@ func NewScheduler(poolSize int) Scheduler {
 	return scheduler
 }
 
-// Schedule is used as a builder pattern to return a task that can then be
+// ScheduleSimpleTask is used as a builder pattern to return a task that can then be
 // added to the Scheduler through a fluent style api
-func (s *scheduler) Schedule() *Task {
-	task := NewTask()
+func (s *scheduler) ScheduleSimpleTask() *SimpleTask {
+	task := NewSimpleTask()
 	s.tasks = append(s.tasks, task)
 	return task
 }
 
-func (s *scheduler) runPending() {
-	// TODO: Should delegate work to multiple works
-	for i := 0; i < len(s.tasks); i++ {
-		if s.tasks[i].shouldRun() {
-			s.workChannel <- s.tasks[i]
-		}
-	}
+func (s *scheduler) ScheduleCronTask(cron string, fn func()) {
+	task := NewCronTask(cron, fn)
+	s.tasks = append(s.tasks, task)
 }
 
 // Start must be called as it starts the polling process for task execution
@@ -69,6 +65,16 @@ func (s *scheduler) Start() chan bool {
 	return stopped
 }
 
+// Iterates through all tasks and sends task that need running to work channel
+func (s *scheduler) runPending() {
+	for i := 0; i < len(s.tasks); i++ {
+		if s.tasks[i].shouldRun() {
+			s.workChannel <- s.tasks[i]
+		}
+	}
+}
+
+// Processes task passed over the work channel and calls run on the task
 func (s *scheduler) processTask() {
 	for task := range s.workChannel {
 		task.run()

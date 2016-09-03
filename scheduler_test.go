@@ -13,7 +13,7 @@ func TestScheduleTask_OneSecond(t *testing.T) {
 
 	// act
 	scheduler := NewScheduler(1)
-	scheduler.Schedule().Second(1).Run(func() {
+	scheduler.ScheduleSimpleTask().Second(1).Run(func() {
 		t.Logf("Task is being executed %s", time.Now())
 		executionTime <- time.Now()
 	})
@@ -43,7 +43,7 @@ func TestScheduleTask_OneMinute(t *testing.T) {
 
 	// act
 	scheduler := NewScheduler(1)
-	scheduler.Schedule().Minute(1).Run(func() {
+	scheduler.ScheduleSimpleTask().Minute(1).Run(func() {
 		t.Logf("Task is being executed %s", time.Now())
 		executionTime <- time.Now()
 	})
@@ -73,7 +73,7 @@ func TestScheduleTask_OneMinuteThirtySeconds(t *testing.T) {
 
 	// act
 	scheduler := NewScheduler(1)
-	scheduler.Schedule().Minute(1).Second(30).Run(func() {
+	scheduler.ScheduleSimpleTask().Minute(1).Second(30).Run(func() {
 		t.Logf("Task is being executed %s", time.Now())
 		executionTime <- time.Now()
 	})
