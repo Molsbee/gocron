@@ -24,11 +24,13 @@ func (s *Schedule) Next(t time.Time) time.Time {
 	}
 
 	for !dayMatches(s, t) {
+		t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 		t = t.AddDate(0, 0, 1)
 		return s.Next(t)
 	}
 
 	for 1<<uint(t.Hour())&s.Hour == 0 {
+		t = time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location())
 		t = t.Add(1 * time.Hour)
 		return s.Next(t)
 	}
