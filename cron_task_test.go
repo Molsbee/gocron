@@ -8,7 +8,7 @@ import (
 )
 
 func TestCronTask_ShouldRun(t *testing.T) {
-	task := NewCronTask("* * * * * *", func() {
+	task := NewCronTask("* * * * *", func() {
 		t.Log("Hello")
 	})
 
@@ -24,7 +24,7 @@ func TestCronTask_ShouldRun(t *testing.T) {
 func TestCronTask_Run(t *testing.T) {
 	// arrange
 	called := false
-	task := NewCronTask("* * * * * *", func() {
+	task := NewCronTask("* * * * *", func() {
 		called = true
 	})
 
