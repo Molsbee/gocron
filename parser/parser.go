@@ -19,9 +19,9 @@ var (
 
 // Parse converts a classic cron formatted string into a schedule which
 // provides mechanism to determine the next time the task should be executed.
-// * * * * * *
-// | | | | | |
-// | | | | | +-- Year              (range: 1900-3000)
+// * * * * *
+// | | | | |
+// | | | | |
 // | | | | +---- Day of the Week   (range: 1-7, 1 standing for Monday)
 // | | | +------ Month of the Year (range: 1-12)
 // | | +-------- Day of the Month  (range: 1-31)
@@ -29,7 +29,7 @@ var (
 // +------------ Minute            (range: 0-59)
 func Parse(cron string) *Schedule {
 	fields := strings.Fields(cron)
-	if len(fields) != 6 {
+	if len(fields) != 5 {
 		log.Panic("Incorrect schedule provided")
 	}
 
@@ -39,7 +39,6 @@ func Parse(cron string) *Schedule {
 		DayOfMonth: getField(fields[2], 1, 31, nil),
 		Month:      getField(fields[3], 1, 12, monthNames),
 		DayOfWeek:  getField(fields[4], 1, 7, dayNames),
-		Year:       getField(fields[5], 2016, 3000, nil),
 	}
 }
 

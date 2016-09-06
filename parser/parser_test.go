@@ -26,7 +26,7 @@ var now = time.Now()
 
 func TestParse_EveryMinute(t *testing.T) {
 	everyMinute := TimeData{
-		cronSchedule: "* * * * * *",
+		cronSchedule: "* * * * *",
 		validation: func(t *testing.T, current, next time.Time) {
 			assert.Equal(t, current.Year(), next.Year())
 			assert.Equal(t, current.Hour(), next.Hour())
@@ -47,7 +47,7 @@ func TestParse_EveryMinute(t *testing.T) {
 
 func TestParse_MultipleMinuteList(t *testing.T) {
 	minuteList := TimeData{
-		cronSchedule: "25,45 * * * * *",
+		cronSchedule: "25,45 * * * *",
 		validation: func(t *testing.T, current, next time.Time) {
 			assert.Equal(t, current.Year(), next.Year())
 			assert.Equal(t, current.Month(), next.Month())
@@ -71,7 +71,7 @@ func TestParse_MultipleMinuteList(t *testing.T) {
 
 func TestParse_MinuteStepValue(t *testing.T) {
 	minuteStep := TimeData{
-		cronSchedule: "*/15 * * * * *",
+		cronSchedule: "*/15 * * * *",
 		validation: func(t *testing.T, current, next time.Time) {
 			assert.Equal(t, current.Year(), next.Year())
 			assert.Equal(t, current.Month(), next.Month())
@@ -91,7 +91,7 @@ func TestParse_MinuteStepValue(t *testing.T) {
 
 func TestParse_HourList(t *testing.T) {
 	var hourList = TimeData{
-		cronSchedule: "* 4,8 * * * *",
+		cronSchedule: "* 4,8 * * *",
 		validation: func(t *testing.T, current, next time.Time) {
 			assert.Equal(t, current.Year(), next.Year())
 			assert.Equal(t, current.Month(), next.Month())
@@ -120,7 +120,7 @@ func TestParse_HourList(t *testing.T) {
 
 func TestParse_MonthFieldFebruary(t *testing.T) {
 	var month = TimeData{
-		cronSchedule: "* * * 2 * *",
+		cronSchedule: "* * * 2 *",
 		validation: func(t *testing.T, current, next time.Time) {
 			assert.True(t, next.Month() == 2)
 

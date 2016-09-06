@@ -10,7 +10,6 @@ type Schedule struct {
 	DayOfMonth uint64
 	Month      uint64
 	DayOfWeek  uint64
-	Year       uint64
 }
 
 // Next determines the next time a schedule should execute
