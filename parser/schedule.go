@@ -13,65 +13,29 @@ type Schedule struct {
 	Year       uint64
 }
 
-// Next determines the next time the schedule should execute based on the time
-// provided to the function
+// Next determines the next time a schedule should execute
 func (s *Schedule) Next(t time.Time) time.Time {
 	t = t.Add(1 * time.Second)
-	added := false
-	yearLimit := t.Year() + 5
-WRAP:
-	// If the iterated time is past the year limit returns zero valued time
-	if t.Year() > yearLimit {
-		return time.Time{}
-	}
 
 	for 1<<uint(t.Month())&s.Month == 0 {
-		if !added {
-			added = true
-			t = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
-		}
+		t = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
 		t = t.AddDate(0, 1, 0)
-
-		if t.Month() == time.January {
-			goto WRAP
-		}
+		return s.Next(t)
 	}
 
-	// Now get a day in that month.
 	for !dayMatches(s, t) {
-		if !added {
-			added = true
-			t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
-		}
 		t = t.AddDate(0, 0, 1)
-
-		if t.Day() == 1 {
-			goto WRAP
-		}
+		return s.Next(t)
 	}
 
 	for 1<<uint(t.Hour())&s.Hour == 0 {
-		if !added {
-			added = true
-			t = time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location())
-		}
 		t = t.Add(1 * time.Hour)
-
-		if t.Hour() == 0 {
-			goto WRAP
-		}
+		return s.Next(t)
 	}
 
 	for 1<<uint(t.Minute())&s.Minute == 0 {
-		if !added {
-			added = true
-			t = t.Truncate(time.Minute)
-		}
 		t = t.Add(1 * time.Minute)
-
-		if t.Minute() == 0 {
-			goto WRAP
-		}
+		return s.Next(t)
 	}
 
 	return t
