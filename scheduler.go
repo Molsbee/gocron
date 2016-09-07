@@ -6,7 +6,7 @@ import "time"
 // execution
 type Scheduler interface {
 	ScheduleSimpleTask() *SimpleTask
-	ScheduleCronTask(string, func())
+	ScheduleCronTask(schedule string, fn func())
 	Start() chan bool
 }
 
